@@ -13,3 +13,5 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: db
+volumes:
+  mysql_data:

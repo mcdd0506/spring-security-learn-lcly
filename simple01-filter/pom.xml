@@ -10,16 +10,6 @@
     <artifactId>simple01-filter</artifactId>
     <packaging>jar</packaging>
 
-    <name>simple01-filter</name>
-    <url>http://maven.apache.org</url>
-
-    <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    </properties>
-
     <dependencies>
         <!-- 暂时通过将 scope 设置为 test 排除该依赖-->
         <dependency>

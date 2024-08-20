@@ -7,7 +7,16 @@
         <version>1.0.0</version>
     </parent>
 
-    <artifactId>demo01-quickstart</artifactId>
+    <artifactId>demo04-db-authentication</artifactId>
     <packaging>jar</packaging>
-
+    <dependencies>
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+        </dependency>
+    </dependencies>
 </project>

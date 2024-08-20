@@ -7,7 +7,7 @@
         <version>1.0.0</version>
     </parent>
 
-    <artifactId>demo01-quickstart</artifactId>
+    <artifactId>demo03-memory-authentication</artifactId>
     <packaging>jar</packaging>
 
 </project>
