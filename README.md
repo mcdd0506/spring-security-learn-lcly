@@ -1,7 +1,8 @@
-# Spring Security Study@lcly
+# SpringSecurity Study
 
 >[!TIP]
-> study project for SpringSecurity
+> study project for SpringSecurity @bilibili 莲城老李
 
+[SpringSecurity6 安全框架](https://space.bilibili.com/383566149/channel/collectiondetail?sid=3407924)
 
-- https://www.bilibili.com/video/BV1h4421D7Ca/?spm_id_from=333.788&vd_source=9071a50b607525e6db8ba7b49bc960f5
+![image-20240820133117400](./assets/image-20240820133117400.png)
