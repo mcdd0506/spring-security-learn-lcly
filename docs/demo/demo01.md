@@ -1,6 +1,6 @@
-# 一、第一个 SpringSecurity 程序
+# 第一个 SpringSecurity 程序
 
-## 1.1 什么是 Spring Security
+# 一、什么是 Spring Security
 
 Spring Security 是一个 Java 框架，用于保护应用程序的安全性。它提供了一套全面的安全解决方案，包括身份验证、授权、防止攻击等功能。Spring Security 基于过滤器链的概念，可以轻松地集成到任何基于 Spring 的应用程序中。它支持多种身份验证选项和授权策略，开发人员可以根据需要选择适合的方式。此外，Spring Security 还提供了一些附加功能，如集成第三方身份验证提供商和单点登录，以及会话管理和密码编码等。总之，Spring Security 是一个强大且易于使用的框架，可以帮助开发人员提高应用程序的安全性和可靠性。
 
@@ -36,19 +36,19 @@ Spring Security 支持以下几点特性：
 | Servlet API integration                                      | 集成 Servlet API                           |
 | Optional integration with Spring Web MVC                     | 可选择与 Spring Web MVC 集成               |
 
-## 1.2 什么是认证
+# 二、什么是认证
 
 Spring Security 提供了对 [认证（Authentication）](https://en.wikipedia.org/wiki/Authentication) 的全面支持。**认证是指我们如何验证试图访问特定资源的人的身份**。一个常见的验证用户的方法是要求用户输入用户名和密码。一旦进行了认证，我们就知道了身份并可以执行授权。
 
 与认证方面相关的 HTTP 响应码：`401 Unatuthorized`
 
-## 1.3 什么是授权
+# 三、什么是授权
 
 Spring Security 为 [授权 （Authorization ）](https://en.wikipedia.org/wiki/Authorization) 提供全面支持。**授权是指确定允许谁访问特定资源**。Spring Security 允许基于请求的授权和基于方法的授权，从而提供 [深度防御](https://en.wikipedia.org/wiki/Defense_in_depth_(computing))。
 
 与授权方面相关的 HTTP 响应码：`403 Forbidden`
 
-## 1.4 快速入门
+# 四、快速入门
 
 > [!TIP] 先决条件
 >
@@ -230,7 +230,7 @@ Web 安全性的默认配置。它依赖于 Spring Security 的内容协商策�
 
 - 返回值：通过 `http.build()` 构造一个 `SecurityFilterChain ` 后返回
 
-## 1.5 其它 Java 安全框架
+# 五、其它 Java 安全框架
 
 1. **[Apache Shiro](https://shiro.apache.org/)**：
    - **简介**：Apache Shiro 是一个强大且灵活的开源安全框架，用于身份验证、授权、会话管理、加密和缓存。

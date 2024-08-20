@@ -11,6 +11,8 @@
     <modules>
         <module>demo01-quickstart</module>
         <module>demo02-custom-filter-chain</module>
+        <module>simple01-filter</module>
+        <module>simple02-interceptor</module>
     </modules>
     <packaging>pom</packaging>
 

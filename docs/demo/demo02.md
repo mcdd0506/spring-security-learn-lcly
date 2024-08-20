@@ -1,10 +1,22 @@
+# Spring Security 过滤器链
+
+# 一、过滤器与拦截器
+
+
+
+## 1.1 过滤器
+
+
+
+## 1.2 拦截器
+
+
+
+## 1.3 总结
+
+
+
 # 二、Spring Security 过滤器链
-
-## 2.1 什么是过滤器
-
-
-
-## 2.2 Spring Security 过滤器链
 
 据我们前面描述的 Spring Security 主要基于过滤器链实现相关功能，而该处的过滤器链可以有以下两重含义：
 
@@ -373,7 +385,7 @@ private void renderLogout(HttpServletRequest request, HttpServletResponse respon
 
 ![image-20240820205152264](https://mcdd-dev-1311841992.cos.ap-beijing.myqcloud.com/assets/202408202051393.png)
 
-## 2.3 SecurityProperties
+## 2.1 SecurityProperties
 
 存储 Spring Security 需要的一些参数
 
@@ -404,7 +416,7 @@ public static class User {
 
 ![image-20240820163314501](https://mcdd-dev-1311841992.cos.ap-beijing.myqcloud.com/assets/202408201633613.png)
 
-## 2.4 如何定制过滤器链
+## 2.2 如何定制过滤器链
 
 Spring Security 的默认过滤器链允许根据需求进行定制，一般步骤如下：
 
