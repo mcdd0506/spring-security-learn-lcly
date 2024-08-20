@@ -8,6 +8,9 @@
     <artifactId>spring-security-learn-lcly</artifactId>
     <version>1.0.0</version>
     <description>Spring Security Study@lcly</description>
+    <modules>
+        <module>demo01-quickstart</module>
+    </modules>
     <packaging>pom</packaging>
 
     <url>https://github.com/mcdd0506/spring-security-learn-lcly</url>
@@ -39,7 +42,10 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <spring-boot.version>3.1.7</spring-boot.version>
         <lombok.version>1.18.32</lombok.version>
-        <mybatis-starter.version>3.0.2</mybatis-starter.version>
+        <mybatis-plus-starter.version>3.5.3.1</mybatis-plus-starter.version>
+        <fastjson.version>2.0.25</fastjson.version>
+        <common.version>1.0.0</common.version>
+        <hutool.version>5.8.16</hutool.version>
     </properties>
 
     <dependencies>
@@ -60,6 +66,18 @@
             <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- https://doc.hutool.cn/ -->
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-all</artifactId>
+            <version>${hutool.version}</version>
+        </dependency>
+        <!-- common -->
+        <dependency>
+            <groupId>jzxy.cbq</groupId>
+            <artifactId>common</artifactId>
+            <version>${common.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
@@ -70,6 +88,12 @@
 
     <dependencyManagement>
         <dependencies>
+            <!--    FastJSON2 框架    -->
+            <dependency>
+                <groupId>com.alibaba.fastjson2</groupId>
+                <artifactId>fastjson2</artifactId>
+                <version>${fastjson.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
@@ -77,10 +101,11 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <!--    Mybatis-Plus 框架    -->
             <dependency>
-                <groupId>org.mybatis.spring.boot</groupId>
-                <artifactId>mybatis-spring-boot-starter</artifactId>
-                <version>${mybatis-starter.version}</version>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-boot-starter</artifactId>
+                <version>${mybatis-plus-starter.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.mysql</groupId>
