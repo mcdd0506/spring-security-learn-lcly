@@ -16,6 +16,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class Demo01QuickStartApplication {
     public static void main(String[] args) {
         SpringApplication.run(Demo01QuickStartApplication.class, args);
+
         log.info("Demo01QuickStartApplication run successful ");
     }
 }

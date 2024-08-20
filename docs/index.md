@@ -26,3 +26,5 @@ features:
 ## 概述 🥶
 
 - [SpringSecurity6 安全框架](https://space.bilibili.com/383566149/channel/collectiondetail?sid=3407924)
+
+![image-20240820133117400](https://mcdd-dev-1311841992.cos.ap-beijing.myqcloud.com/assets/202408201555951.png)
