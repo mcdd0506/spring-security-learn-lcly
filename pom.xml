@@ -13,6 +13,8 @@
         <module>demo02-custom-filter-chain</module>
         <module>simple01-filter</module>
         <module>simple02-interceptor</module>
+        <module>demo03-memory-authentication</module>
+        <module>demo04-db-authentication</module>
     </modules>
     <packaging>pom</packaging>
 
@@ -45,10 +47,12 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <spring-boot.version>3.1.7</spring-boot.version>
         <lombok.version>1.18.32</lombok.version>
-        <mybatis-plus-starter.version>3.5.3.1</mybatis-plus-starter.version>
+        <mybatis-plus-starter.version>3.5.7</mybatis-plus-starter.version>
         <fastjson.version>2.0.25</fastjson.version>
         <common.version>1.0.0</common.version>
         <hutool.version>5.8.16</hutool.version>
+        <mysql.version>8.0.33</mysql.version>
+
     </properties>
 
     <dependencies>
@@ -113,11 +117,12 @@
             <dependency>
                 <groupId>com.mysql</groupId>
                 <artifactId>mysql-connector-j</artifactId>
-                <scope>runtime</scope>
+                <version>${mysql.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter-oauth2-client</artifactId>
+                <version>3.1.7</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
