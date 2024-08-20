@@ -10,6 +10,7 @@
     <description>Spring Security Study@lcly</description>
     <modules>
         <module>demo01-quickstart</module>
+        <module>demo02-custom-filter-chain</module>
     </modules>
     <packaging>pom</packaging>
 
