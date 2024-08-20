@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 public class UserController {
 
     @ResponseBody
-    @GetMapping("sayHello")
+    @GetMapping("/sayHello")
     public String sayHello() {
         return "hello";
     }
