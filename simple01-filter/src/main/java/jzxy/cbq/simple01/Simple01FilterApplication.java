@@ -3,6 +3,7 @@ package jzxy.cbq.simple01;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.web.servlet.ServletComponentScan;
 
 /**
  * Simple01FilterApplication
@@ -12,6 +13,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @date: 2024/8/20 22:43
  */
 @SpringBootApplication
+@ServletComponentScan("jzxy.cbq.simple01.filter")
 @Slf4j
 public class Simple01FilterApplication {
     public static void main(String[] args) {

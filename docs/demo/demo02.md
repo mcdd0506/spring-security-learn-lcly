@@ -1,20 +1,124 @@
 # Spring Security 过滤器链
 
+> [!NOTE] 内容：
+>
+> - 通过 Spring Boot 中实现过滤器和拦截器
+> - 初步探究 Spring Security 过滤器链以及其相关操作
+
 # 一、过滤器与拦截器
 
-
+过滤器 Filter 和拦截器 Interceptor 在功能方面有很多相似之处，但在具体实现上差距还是很大的，我们通过在 Spring Boot 中实现过滤器和拦截器来演示相关配置
 
 ## 1.1 过滤器
 
+1. 自定义过滤器并实现 Filter 接口 (SpringBoot3 后需引入 `jakarta.servlet.annotation.WebFilter;`) 添加 @WebFilter 并配置需要过滤的 URL
+2. 重写 doFilter() 方法实现过滤器逻辑
 
+```java
+@WebFilter(urlPatterns = "/api/hellos/*")
+@Slf4j
+public class HelloFilter implements Filter {
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+        HttpServletRequest req = (HttpServletRequest) request;
+
+        String ip = req.getRemoteAddr();
+        HttpSession session = req.getSession();
+        Integer count = (Integer) session.getAttribute("count");
+        count = Objects.isNull(count) ? 1 : ++count;
+        log.info("HelloFilter --> ip: {} count: {}", ip, count);
+        session.setAttribute("count", count);
+
+
+        chain.doFilter(request, response);
+    }
+}
+```
+
+3. 在 Spring Boot 主类上配置 @ServletComponentScan
+
+```java
+@SpringBootApplication
+@ServletComponentScan("jzxy.cbq.simple01.filter")
+@Slf4j
+public class Simple01FilterApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(Simple01FilterApplication.class, args);
+
+        log.info("Simple01FilterApplication run successful ");
+    }
+}
+```
+
+```java
+@RestController
+@RequestMapping("/api/hellos")
+public class HelloController {
+
+    @GetMapping("/{name}")
+    public String sayHello(@PathVariable("name") String name) {
+        return "Hello " + name;
+    }
+}
+```
+
+![image-20240820231359288](https://mcdd-dev-1311841992.cos.ap-beijing.myqcloud.com/assets/202408202313447.png)
 
 ## 1.2 拦截器
 
+1. 自定义拦截器，实现 HandlerInterceptor 接口
+2. 实现接口中的拦截方法
 
+```java
+@Slf4j
+public class HelloInterceptor implements HandlerInterceptor {
+    @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+
+        String ip = request.getRemoteAddr();
+        HttpSession session = request.getSession();
+        Integer count = (Integer) session.getAttribute("count");
+        count = Objects.isNull(count) ? 1 : ++count;
+        log.info("HelloInterceptor --> ip: {} count: {}", ip, count);
+        session.setAttribute("count", count);
+
+        return true;
+    }
+}
+```
+
+3. 创建配置类，实现 WebMvcConfigure 接口，重写 addInterceptor 方法，并配置需要过滤的 URL
+
+```java
+@Configuration
+public class WebMvcConfiguration implements WebMvcConfigurer {
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        HelloInterceptor interceptor = new HelloInterceptor();
+        registry.addInterceptor(interceptor).addPathPatterns("/api/hellos/*");
+    }
+}
+```
+
+```java
+@RestController
+@RequestMapping("/api/hellos")
+public class HelloController {
+
+    @GetMapping("/{name}")
+    public String sayHello(@PathVariable("name") String name) {
+        return "Hello " + name;
+    }
+}
+```
+
+![image-20240820231911311](https://mcdd-dev-1311841992.cos.ap-beijing.myqcloud.com/assets/202408202319474.png)
 
 ## 1.3 总结
 
-
+1. 过滤器 Filter 依赖于 Servlet 容器，属于 Servlet 规范的一部分，而拦截器 Interceptor 依赖于 SpringMVC 框架
+2. 过滤器 Filter 的生命周期由 Servlet 容器管理而拦截器 Interceptor  通过 IOC 容器来管理 （可通过注入等方式来获取其 Bean 示例）
+3. 过滤器 Filter 可拦截所有 Web 资源包括 JSP、Servlet、静态资源等而拦截器 Interceptor  则只拦截 Controller
 
 # 二、Spring Security 过滤器链
 
