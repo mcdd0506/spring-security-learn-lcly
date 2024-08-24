@@ -7,7 +7,7 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
       - type: bind
-        source: ../db
+        source: ./db
         target: /docker-entrypoint-initdb.d
         read_only: true
     environment:
