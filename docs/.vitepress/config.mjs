@@ -23,6 +23,7 @@ export default defineConfig({
                 items: [
                     {text: '🤣 第一个 SpringSecurity 程序', link: '/demo/demo01'},
                     {text: '😋 Spring Security 过滤器链', link: '/demo/demo02'},
+                    {text: '😋 Spring Security 的用户认证', link: '/demo/demo03'},
                     {text: '🥸 Index ', link: '/demo/index.md'},
                 ]
             },
@@ -40,6 +41,7 @@ export default defineConfig({
                 items: [
                     {text: '🤣 第一个 SpringSecurity 程序', link: '/demo/demo01'},
                     {text: '😋 Spring Security 过滤器链', link: '/demo/demo02'},
+                    {text: '😋 Spring Security 的用户认证', link: '/demo/demo03'},
                 ]
             },
             {
