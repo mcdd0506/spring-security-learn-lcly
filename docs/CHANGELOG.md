@@ -1,3 +1,10 @@
+## V1.3.0 <Badge type="tip" text="^1.3.0" />
+
+- 基于内存认证
+- 数据库认证
+- 认证用户注册和密码升级
+- JSON 格式返回结果
+
 ## V1.2.0 <Badge type="tip" text="^1.2.0" />
 
 - demo02 自定义 Filter Chain
