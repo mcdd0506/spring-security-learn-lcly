@@ -911,5 +911,115 @@ public interface AccountService extends IService<Account>, UserDetailsService, U
 
 # 五、JSON 格式返回结果
 
+默认地 Spring Security 中使用前后端不分离模式返回认证结果：
 
+- 认证失败：通过 `DefaultLoginPageGeneratingFilter` 的 createError 方法将错误消息直接显示在登录页面上
 
+```java
+	private String createError(boolean isError, String message) {
+		if (!isError) {
+			return "";
+		}
+		return "<div class=\"alert alert-danger\" role=\"alert\">" + HtmlUtils.htmlEscape(message) + "</div>";
+	}
+```
+
+- 认证成功：通过 `ForwardAuthenticationSuccessHandler` 将请求转发到请求对应的资源上
+
+但是目前前后端分离的开发模式已然成为行业标准，但是 Spring Security 默认的认证结果不符合我们的需求，因此我们需要进行配置让其支持 JSON 格式返回以服务我们的前后端分离开发模式。
+
+## 5.1 认证结果处理器
+
+Spring Security 中用于处理认证结果的接口有：
+
+- `AuthenticationSuccessHandler` 通过 onAuthenticationSuccess  返回认证成功结果
+- `AuthenticationFailureHandler` 通过 onAuthenticationFailure  返回认证失败结果
+
+以上 2 个接口的关键方法参数是类似的
+
+```java
+void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
+			Authentication authentication) throws IOException, ServletException;
+```
+
+```java
+void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response,
+			AuthenticationException exception) throws IOException, ServletException;
+```
+
+需要注意的是他们不是 Controller 因此在返回前端 JSON 数据的时候需要自定义处理逻辑
+
+## 5.2 返回认证成功的结果
+
+1. 自定义认证成功处理逻辑
+
+```java
+public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+        // 设置响应头
+        response.setContentType("application/json;charset=utf-8");
+        PrintWriter writer = response.getWriter();
+        // 构建返回数据
+        UserDetails data = (UserDetails) authentication.getPrincipal();
+        RestBean<String> success = RestBean.success(data.getUsername());
+        // 返回
+        writer.write(JSON.toJSONString(success));
+    }
+```
+
+2. 将其添加到 formLogin 配置中
+
+```java
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http.authorizeHttpRequests(requests -> requests.
+                        requestMatchers("/api/users/**").permitAll()
+                        .requestMatchers("/api/auths/**").permitAll()
+                        .anyRequest().authenticated())
+                .formLogin(form -> form.								// [!code ++]
+                        successHandler(this::onAuthenticationSuccess)) // [!code ++]
+                .csrf(AbstractHttpConfigurer::disable);
+        return http.build();
+    }
+```
+
+访问 `localhost:8083/login` 信息 cxk + cxk123
+
+![image-20240825213918752](https://mcdd-dev-1311841992.cos.ap-beijing.myqcloud.com/assets/202408252139698.png)
+
+## 5.3 返回认证失败的结果
+
+1. 自定义认证失败处理逻辑
+
+```java
+    public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception) throws IOException, ServletException {
+        // 设置响应头
+        response.setContentType("application/json;charset=utf-8");
+        PrintWriter writer = response.getWriter();
+        // 构建返回数据
+        String msg = exception.getMessage();
+        RestBean<String> failure = RestBean.failure(HttpStatus.BAD_REQUEST.value(), msg);
+        // 返回
+        writer.write(JSON.toJSONString(failure));
+    }
+```
+
+2. 将其添加到 formLogin 配置中
+
+```java
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http.authorizeHttpRequests(requests -> requests.
+                        requestMatchers("/api/users/**").permitAll()
+                        .requestMatchers("/api/auths/**").permitAll()
+                        .anyRequest().authenticated())
+                .formLogin(form -> form.
+                        successHandler(this::onAuthenticationSuccess)
+                        .failureHandler(this::onAuthenticationFailure)) // [!code ++]
+                .csrf(AbstractHttpConfigurer::disable);
+        return http.build();
+    }
+```
+
+访问 `localhost:8083/login` 信息 cxk + 123abc
+
+![image-20240825214609030](https://mcdd-dev-1311841992.cos.ap-beijing.myqcloud.com/assets/202408252146257.png)
