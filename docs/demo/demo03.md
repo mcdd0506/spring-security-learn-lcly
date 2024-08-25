@@ -790,13 +790,124 @@ public class SecurityConfiguration {
 
 ![image-20240825201549277](https://mcdd-dev-1311841992.cos.ap-beijing.myqcloud.com/assets/202408252015438.png)
 
-
-
 ## 4.2 密码升级
 
+上面我们完成了新用户注册的逻辑，那对于已注册的旧用户（密码为明文存储）如果我们希望升级其密码安全该如何操作呢？
 
+![image-20240825202044798](https://mcdd-dev-1311841992.cos.ap-beijing.myqcloud.com/assets/202408252020979.png)
 
+在 Spring Security 中管理密码升级的接口为 `UserDetailsPasswordService` 该接口在用户完成登录认证后会自动开启对密码的升级操作
 
+```java
+public interface UserDetailsPasswordService {
+
+	/**
+	 * Modify the specified user's password. This should change the user's password in the
+	 * persistent user repository (database, LDAP etc).
+	 * @param user the user to modify the password for
+	 * @param newPassword the password to change to, encoded by the configured
+	 * {@code PasswordEncoder}
+	 * @return the updated UserDetails with the new password
+	 */
+	UserDetails updatePassword(UserDetails user, String newPassword);
+
+}
+```
+
+下面为具体操作
+
+1. 添加修改密码的方法
+
+```java
+public interface AccountService extends IService<Account>, UserDetailsService, UserDetailsPasswordService {
+    boolean register(RegisterVo vo);
+
+    boolean userExistsByUsername(String username);
+
+    boolean userExistsByEmail(String email);
+
+    boolean updatePasswordByUsernameOrEmail(String text , String newPassword);
+}
+```
+
+```java
+    @Override
+    public UserDetails updatePassword(UserDetails user, String newPassword) {
+        boolean updated = this.updatePasswordByUsernameOrEmail(user.getUsername(), newPassword);
+        return updated ? user : null;
+    }
+
+    @Override
+    public boolean updatePasswordByUsernameOrEmail(String text, String newPassword) {
+        if (!this.userExistsByUsername(text) && !this.userExistsByEmail(text)) {
+            throw new UsernameNotFoundException("没有指定用户名或邮箱的用户");
+        } else {
+            return this.update(new LambdaUpdateWrapper<Account>()
+                    .set(Account::getPassword, newPassword)
+                    .in(Account::getUsername, text)
+                    .or()
+                    .in(Account::getEmail, text));
+        }
+    }
+```
+
+2. 测试
+
+```java
+    @Test
+    void testUpdatePasswordByUsernameOrEmail() {
+        boolean updated01 = service.updatePasswordByUsernameOrEmail("mcdd01", "updated-password");
+        assertTrue(updated01);
+        boolean updated02 = service.updatePasswordByUsernameOrEmail("mcdd1024@qq.com", "updated-password");
+        assertTrue(updated02);
+        assertThrows(UsernameNotFoundException.class, () -> service.updatePasswordByUsernameOrEmail("not-exist@qq.com", "updated-password"));
+        assertThrows(UsernameNotFoundException.class, () -> service.updatePasswordByUsernameOrEmail("not-exist", "updated-password"));
+    }
+```
+
+![image-20240825205918100](https://mcdd-dev-1311841992.cos.ap-beijing.myqcloud.com/assets/202408252059326.png)
+
+进行升级操作
+
+![image-20240825210045308](https://mcdd-dev-1311841992.cos.ap-beijing.myqcloud.com/assets/202408252100527.png)
+
+假定我们要升级的用户为 test ,访问 `localhost:8083/login`
+
+![image-20240825211832412](https://mcdd-dev-1311841992.cos.ap-beijing.myqcloud.com/assets/202408252118640.png)
+
+注意升级完成后我们可以将默认的密码加密器设置为 `BCryptPasswordEncoder`
+
+```java
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+```
+
+修改 loadUserByUsername 方法中获取 UserDetails 逻辑 
+
+```java
+    @Override
+    public UserDetails loadUserByUsername(String text) throws UsernameNotFoundException {
+        Account account = this.getOne(new LambdaQueryWrapper<Account>().eq(Account::getUsername, text).or().eq(Account::getEmail, text));
+        if (Objects.isNull(account)) {
+            throw new UsernameNotFoundException(text);
+        }
+        return User.builder()
+                .username(account.getUsername())
+                .password(account.getPassword()) // [!code ++]
+                .roles(account.getRole())
+                .build();
+    }
+```
+
+现在默认的加密器被我们替换为 BCryptPasswordEncoder 所以密码前缀可以不需要了,下面我们对数据库进行清理
+
+![image-20240825212131201](https://mcdd-dev-1311841992.cos.ap-beijing.myqcloud.com/assets/202408252121418.png)
+
+重新启动并验证 cxk + cxk123
+
+![image-20240825212304782](https://mcdd-dev-1311841992.cos.ap-beijing.myqcloud.com/assets/202408252123984.png)
 
 # 五、JSON 格式返回结果
 

@@ -1,12 +1,15 @@
 package jzxy.cbq.demo04.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import jzxy.cbq.demo04.auth.RegisterVo;
 import jzxy.cbq.demo04.entity.Account;
 import jzxy.cbq.demo04.auth.UserNameAlreadyExistException;
 import jzxy.cbq.demo04.mapper.AccountMapper;
 import jzxy.cbq.demo04.service.AccountService;
+import org.springframework.context.annotation.Bean;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -32,8 +35,7 @@ public class AccountServiceImpl extends ServiceImpl<AccountMapper, Account> impl
         }
         return User.builder()
                 .username(account.getUsername())
-                // 因为我们没有配置指定的密码加密器为了防止匹配不到相应的加密器此处手动指定为 noop
-                .password("{noop}" + account.getPassword())
+                .password(account.getPassword())
                 .roles(account.getRole())
                 .build();
     }
@@ -50,6 +52,27 @@ public class AccountServiceImpl extends ServiceImpl<AccountMapper, Account> impl
             return this.save(account);
         }
     }
+
+    @Override
+    public UserDetails updatePassword(UserDetails user, String newPassword) {
+        boolean updated = this.updatePasswordByUsernameOrEmail(user.getUsername(), newPassword);
+        return updated ? user : null;
+    }
+
+    @Override
+    public boolean updatePasswordByUsernameOrEmail(String text, String newPassword) {
+        if (!this.userExistsByUsername(text) && !this.userExistsByEmail(text)) {
+            throw new UsernameNotFoundException("没有指定用户名或邮箱的用户");
+        } else {
+            return this.update(new LambdaUpdateWrapper<Account>()
+                    .set(Account::getPassword, newPassword)
+                    .in(Account::getUsername, text)
+                    .or()
+                    .in(Account::getEmail, text));
+        }
+    }
+
+
 
     @Override
     public boolean userExistsByUsername(String username) {
