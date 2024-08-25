@@ -44,9 +44,4 @@ public class AuthController {
         }
         return RestBean.failure(HttpStatus.BAD_REQUEST.value(), Const.DEFAULT_INNER_ERROR_MSG);
     }
-
-    @PostMapping("/test")
-    private void test(@RequestBody RegisterVo registerVo) {
-        System.out.println("registerVo = " + registerVo);
-    }
 }

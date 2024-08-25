@@ -626,36 +626,28 @@ public class AccountServiceImpl extends ServiceImpl<AccountMapper, Account> impl
 
 ## 4.1 用户注册
 
-1. 实现 `UserDetailsManager` 中 `createUser` 方法
+1. 实现 `UserDetailsManager` 中 `register` 方法
 
 ```java
-package jzxy.cbq.demo04.service.impl;
+@Data
+public class RegisterVo {
+    private String username;
+    private String password;
+    private String email;
+}
+```
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import jzxy.cbq.demo04.entity.Account;
-import jzxy.cbq.demo04.auth.UserNameAlreadyExistException;
-import jzxy.cbq.demo04.mapper.AccountMapper;
-import jzxy.cbq.demo04.service.AccountService;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.provisioning.UserDetailsManager;
-import org.springframework.stereotype.Service;
+```java
+public interface AccountService extends IService<Account>, UserDetailsService {
+    boolean register(RegisterVo vo);
+    boolean userExistsByUsername(String username);
+    boolean userExistsByEmail(String email);
+}
+```
 
-import java.util.Objects;
-
-/**
- * AccountServiceImpl
- *
- * @version 1.0.0
- * @author: mcdd
- * @date: 2024/8/21 00:01
- */
+```java
 @Service
-public class AccountServiceImpl extends ServiceImpl<AccountMapper, Account> implements AccountService, UserDetailsService, UserDetailsManager {
+public class AccountServiceImpl extends ServiceImpl<AccountMapper, Account> implements AccountService {
 
     @Override
     public UserDetails loadUserByUsername(String text) throws UsernameNotFoundException {
@@ -672,51 +664,131 @@ public class AccountServiceImpl extends ServiceImpl<AccountMapper, Account> impl
     }
 
     @Override
-    public void createUser(UserDetails user) {
-        if (this.userExists(user.getUsername())) {
+    public boolean register(RegisterVo vo) {
+        if (this.userExistsByUsername(vo.getUsername()) || this.userExistsByEmail(vo.getEmail())) {
             throw new UserNameAlreadyExistException("用户名或邮箱已被注册");
-        }
-        Account account = new Account();
-        account.setUsername(user.getUsername());
-        account.setPassword(user.getPassword());
-        this.save(account);
-    }
-
-    @Override
-    public void updateUser(UserDetails user) {
-        if (!this.userExists(user.getUsername())) {
-            throw new UsernameNotFoundException("不存在指定用户名或邮箱的账户");
+        } else {
+            Account account = new Account();
+            account.setUsername(vo.getUsername());
+            account.setPassword(vo.getPassword());
+            account.setEmail(vo.getEmail());
+            return this.save(account);
         }
     }
 
     @Override
-    public void deleteUser(String text) {
-        if (!this.userExists(text)) {
-            throw new UsernameNotFoundException("不存在指定用户名或邮箱的账户");
-        }
-        this.remove(new LambdaQueryWrapper<Account>().eq(Account::getUsername, text).or().eq(Account::getEmail, text));
+    public boolean userExistsByUsername(String username) {
+        Account account = this.getOne(new LambdaQueryWrapper<Account>().eq(Account::getUsername, username));
+        return account != null;
     }
 
     @Override
-    public void changePassword(String oldPassword, String newPassword) {
-
-    }
-
-    @Override
-    public boolean userExists(String text) {
-        Account account = this.getOne(new LambdaQueryWrapper<Account>().eq(Account::getUsername, text).or().eq(Account::getEmail, text));
+    public boolean userExistsByEmail(String email) {
+        Account account = this.getOne(new LambdaQueryWrapper<Account>().eq(Account::getEmail, email));
         return account != null;
     }
 }
-
 ```
+
+```java
+public class UserNameAlreadyExistException extends RuntimeException {
+    public UserNameAlreadyExistException(String message) {
+        super(message);
+    }
+}
+```
+
+```java
+@RestControllerAdvice
+public class AuthException {
+    @ExceptionHandler(UsernameNotFoundException.class)
+    private RestBean<String> userNameAlreadyExistException(){
+        return RestBean.failure(HttpStatus.BAD_REQUEST.value(), "用户名或邮箱已被注册");
+    }
+
+}
+```
+
+
 
 2. 创建相关 API
 
 ```java
+@RestController
+@RequestMapping("/api/auths")
+@RequiredArgsConstructor
+@Slf4j
+public class AuthController {
+
+    private final AccountService service;
+
+    @PostMapping("/register")
+    private RestBean<RegisterVo> register(@RequestBody RegisterVo registerVo) throws UserNameAlreadyExistException {
+        System.out.println("registerVo = " + registerVo);
+        try {
+            if (service.register(registerVo)) {
+                return RestBean.success();
+            }
+        } catch (UserNameAlreadyExistException e) {
+            if (log.isErrorEnabled()) {
+                log.error(e.getMessage());
+            }
+            return RestBean.failure(HttpStatus.BAD_REQUEST.value(), e.getMessage());
+        }
+        return RestBean.failure(HttpStatus.BAD_REQUEST.value(), Const.DEFAULT_INNER_ERROR_MSG);
+    }
+}
 ```
 
+3. 放行相关接口
 
+```java
+@Configuration
+public class SecurityConfiguration {
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http.authorizeHttpRequests(requests -> requests.
+                        requestMatchers("/api/users/**").permitAll()
+                        .requestMatchers("/api/auths/**").permitAll() // [!code ++]
+                        .anyRequest().authenticated())
+                .formLogin(Customizer.withDefaults())
+                .csrf(AbstractHttpConfigurer::disable);
+        return http.build();
+    }
+}
+```
+
+4. 测试
+
+```java
+    @Test
+    void testRegisterWithAlreadyExistUsername() {
+        RegisterVo vo = new RegisterVo();
+        vo.setUsername("mcdd1024");
+        vo.setPassword("123abc");
+        vo.setEmail("not-exist@qq.com");
+        assertThrows(UserNameAlreadyExistException.class, () -> service.register(vo));
+    }
+    @Test
+    void testRegisterWithAlreadyExistEmail() {
+        RegisterVo vo = new RegisterVo();
+        vo.setUsername("not-exist");
+        vo.setPassword("123abc");
+        vo.setEmail("mcdd1024@qq.com");
+        assertThrows(UserNameAlreadyExistException.class, () -> service.register(vo));
+    }
+    @Test
+    void testRegisterWithDifferentUsername() {
+        RegisterVo vo = new RegisterVo();
+        vo.setUsername("mcdd01");
+        vo.setPassword("123abc");
+        vo.setEmail("mcdd01@qq.com");
+        assertTrue(service.register(vo));
+    }
+```
+
+![image-20240825201549277](https://mcdd-dev-1311841992.cos.ap-beijing.myqcloud.com/assets/202408252015438.png)
 
 
 
