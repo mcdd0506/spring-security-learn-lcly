@@ -1,7 +1,9 @@
 package jzxy.cbq.demo04.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import jzxy.cbq.demo04.auth.RegisterVo;
 import jzxy.cbq.demo04.entity.Account;
+import org.springframework.security.core.userdetails.UserDetailsService;
 
 /**
  * AccountService
@@ -10,5 +12,10 @@ import jzxy.cbq.demo04.entity.Account;
  * @author: mcdd
  * @date: 2024/8/21 00:01
  */
-public interface AccountService extends IService<Account> {
+public interface AccountService extends IService<Account>, UserDetailsService {
+    boolean register(RegisterVo vo);
+
+    boolean userExistsByUsername(String username);
+
+    boolean userExistsByEmail(String email);
 }

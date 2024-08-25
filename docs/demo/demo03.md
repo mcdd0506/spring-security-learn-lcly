@@ -384,7 +384,349 @@ public PasswordEncoder passwordEncoder() {
 
 # 三、基于 DB 数据库进行认证
 
+> [!CAUTION] 注意
+>
+> 首先我们需要明确一个问题，在上面我们提到 Spring Security 提供了 InMemory 和 JDBC 两种基于 `UserDetailsService` 的实现，我们需要注意在基于 JDBC 的实现中， Spring Security  使用的 JDBC Template 进行数据库相关操作，因此其默认实现并不适用于 MyBatis、MyBatisPlus 等 ORM 框架
+>
+> ![image-20240825015747873](/home/mcdd/Pictures/typora/image-20240825015747873.png)
+
+那么我们如何使用自定义的 ORM 实现基于 DB 数据库进行认证呢？我们需要梳理 Spring Security  表单登录认证流程：
+
+1. 表单请求被 `UsernamePasswordAuthenticationFilter` 捕获后调用 `attemptAuthentication` 方法将用户名和密码封装到 `UsernamePasswordAuthenticationToken` 对象中
+
+```java
+	@Override
+	public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
+			throws AuthenticationException {
+        // 1. 获取 POST 请求表单中的 `username` 和 `password` // [!code ++]
+		if (this.postOnly && !request.getMethod().equals("POST")) {
+			throw new AuthenticationServiceException("Authentication method not supported: " + request.getMethod());
+		}
+		String username = obtainUsername(request);
+		username = (username != null) ? username.trim() : "";
+		String password = obtainPassword(request);
+		password = (password != null) ? password : "";
+        // 2. 将获取到的 `username` 和 `password` 封装为 UsernamePasswordAuthenticationToken // [!code ++]
+		UsernamePasswordAuthenticationToken authRequest = UsernamePasswordAuthenticationToken.unauthenticated(username,
+				password);
+		// Allow subclasses to set the "details" property
+		setDetails(request, authRequest);
+        // 3. 调用 AuthenticationManager 的 authenticate 方法发起认证 // [!code ++]
+		return this.getAuthenticationManager().authenticate(authRequest);
+	}
+```
+
+2. `AuthenticationManager` 认证管理器通过 `authenticate` 方法发起认证之后由 `ProviderManager` 根据参数类型匹配相应的 `AuthenticationProvider`
 
 
-# 四、密码升级以及 JSON 格式返回结果
+```java
+	@Override
+	public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+		Class<? extends Authentication> toTest = authentication.getClass();
+		AuthenticationException lastException = null;
+		AuthenticationException parentException = null;
+		Authentication result = null;
+		Authentication parentResult = null;
+		int currentPosition = 0;
+		int size = this.providers.size();
+		for (AuthenticationProvider provider : getProviders()) {
+			if (!provider.supports(toTest)) { // 1. 据参数类型匹配相应的 `AuthenticationProvider` // [!code ++]
+				continue;
+			}
+			if (logger.isTraceEnabled()) {
+				logger.trace(LogMessage.format("Authenticating request with %s (%d/%d)",
+						provider.getClass().getSimpleName(), ++currentPosition, size));
+			}
+			try {
+				result = provider.authenticate(authentication);
+				if (result != null) {
+					copyDetails(authentication, result);
+					break;
+				}
+			}
+			catch (AccountStatusException | InternalAuthenticationServiceException ex) {
+				prepareException(ex, authentication);
+				// SEC-546: Avoid polling additional providers if auth failure is due to
+				// invalid account status
+				throw ex;
+			}
+			catch (AuthenticationException ex) {
+				lastException = ex;
+			}
+		}
+		if (result == null && this.parent != null) {
+			// Allow the parent to try.
+			try {
+				parentResult = this.parent.authenticate(authentication);
+				result = parentResult;
+			}
+			catch (ProviderNotFoundException ex) {
+				// ignore as we will throw below if no other exception occurred prior to
+				// calling parent and the parent
+				// may throw ProviderNotFound even though a provider in the child already
+				// handled the request
+			}
+			catch (AuthenticationException ex) {
+				parentException = ex;
+				lastException = ex;
+			}
+		}
+		if (result != null) {
+			if (this.eraseCredentialsAfterAuthentication && (result instanceof CredentialsContainer)) {
+				// Authentication is complete. Remove credentials and other secret data
+				// from authentication
+				((CredentialsContainer) result).eraseCredentials();
+			}
+			// If the parent AuthenticationManager was attempted and successful then it
+			// will publish an AuthenticationSuccessEvent
+			// This check prevents a duplicate AuthenticationSuccessEvent if the parent
+			// AuthenticationManager already published it
+			if (parentResult == null) {
+				this.eventPublisher.publishAuthenticationSuccess(result);
+			}
+
+			return result;
+		}
+
+		// Parent was null, or didn't authenticate (or throw an exception).
+		if (lastException == null) { 1. 若匹配不到相应的 `AuthenticationProvider` 抛出 ProviderNotFoundException 异常 // [!code ++]
+			lastException = new ProviderNotFoundException(this.messages.getMessage("ProviderManager.providerNotFound",
+					new Object[] { toTest.getName() }, "No AuthenticationProvider found for {0}"));
+		}
+		// If the parent AuthenticationManager was attempted and failed then it will
+		// publish an AbstractAuthenticationFailureEvent
+		// This check prevents a duplicate AbstractAuthenticationFailureEvent if the
+		// parent AuthenticationManager already published it
+		if (parentException == null) {
+			prepareException(lastException, authentication);
+		}
+		throw lastException;
+	}
+```
+
+
+3. `AuthenticationProvider` 是认证类的提供者其实现类 `DaoAuthenticationProvider` 专注于处理 `UsernamePasswordAuthenticationToken` 的认证请求
+
+![image-20240825102932802](https://mcdd-dev-1311841992.cos.ap-beijing.myqcloud.com/assets/202408251029951.png)
+
+4. `DaoAuthenticationProvider` 认证类调用 `retrieveUser` 方法实现对用户名的检索、检索成功后返回 `UserDetails`
+
+```java
+@Override
+ 	//1. 对用户名的检索 // [!code ++]
+	protected final UserDetails retrieveUser(String username, UsernamePasswordAuthenticationToken authentication) 
+			throws AuthenticationException {
+		prepareTimingAttackProtection();
+		try {
+            // 2. 检索成功后返回 `UserDetails`  // [!code ++] 
+			UserDetails loadedUser = this.getUserDetailsService().loadUserByUsername(username);
+			if (loadedUser == null) {
+				throw new InternalAuthenticationServiceException(
+						"UserDetailsService returned null, which is an interface contract violation");
+			}
+			return loadedUser;
+		}
+		catch (UsernameNotFoundException ex) {
+			mitigateAgainstTimingAttack(authentication);
+			throw ex;
+		}
+		catch (InternalAuthenticationServiceException ex) {
+			throw ex;
+		}
+		catch (Exception ex) {
+			throw new InternalAuthenticationServiceException(ex.getMessage(), ex);
+		}
+	}
+```
+
+5. `DaoAuthenticationProvider` 认证类调用 `additionalAuthenticationChecks` 方法实现对密码的检索成功后将 `Authentication` 信息存储到 `SecurityContextHolder` 对象中以供后续 Filter 使用
+
+```java
+	@Override
+	@SuppressWarnings("deprecation")
+ 	//1. 专注于处理 `UsernamePasswordAuthenticationToken` 的认证请求 // [!code ++]
+	protected void additionalAuthenticationChecks(UserDetails userDetails,
+			UsernamePasswordAuthenticationToken authentication) throws AuthenticationException {
+		if (authentication.getCredentials() == null) {
+			this.logger.debug("Failed to authenticate since no credentials provided");
+			throw new BadCredentialsException(this.messages
+				.getMessage("AbstractUserDetailsAuthenticationProvider.badCredentials", "Bad credentials"));
+		}
+		String presentedPassword = authentication.getCredentials().toString();
+		if (!this.passwordEncoder.matches(presentedPassword, userDetails.getPassword())) {
+            //2. 对密码的检索 // [!code ++]
+			this.logger.debug("Failed to authenticate since password does not match stored value");
+			throw new BadCredentialsException(this.messages
+				.getMessage("AbstractUserDetailsAuthenticationProvider.badCredentials", "Bad credentials"));
+		}
+	}
+```
+
+通过上述对 Spring Security  表单登录认证流程的梳理我们可以得出我们可以将第四步中对用户名进行检索替换为对数据库中用户的检索就可以实现自定义 ORM 框架基于 DB 数据库进行认证，那么我们如何进行操作呢？我们可以查看下第四步中 `retrieveUser` 方法是如何进行用户名的检索操作的：
+
+```java
+		try {
+            // 获取 UserDetailsService 后调用 loadUserByUsername 方法进行用户名检索 // [!code ++] 
+			UserDetails loadedUser = this.getUserDetailsService().loadUserByUsername(username);
+			if (loadedUser == null) {
+				throw new InternalAuthenticationServiceException(
+						"UserDetailsService returned null, which is an interface contract violation");
+			}
+			return loadedUser;
+		}
+```
+
+因此我们可以将其替换为手动实现：
+
+```java
+@Service
+public class AccountServiceImpl extends ServiceImpl<AccountMapper, Account> implements AccountService, UserDetailsService {
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        return null;
+    }
+}
+```
+
+实现基于数据库的  `loadUserByUsername` 方法
+
+```java
+@Service
+public class AccountServiceImpl extends ServiceImpl<AccountMapper, Account> implements AccountService, UserDetailsService {
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        Account account = this.getOne(new LambdaQueryWrapper<Account>().eq(Account::getUsername, username));
+        if (Objects.isNull(account)) {
+            throw new UsernameNotFoundException(username);
+        }
+        return User.builder()
+                .username(account.getUsername())
+                // 因为我们没有配置指定的密码加密器为了防止匹配不到相应的加密器此处手动指定为 noop // [!code ++] 
+                .password("{noop}" +  account.getPassword())
+                .roles(account.getRole())
+                .build();
+    }
+}
+```
+
+访问 `localhost:8083/login`进行验证
+
+![image-20240825105633743](https://mcdd-dev-1311841992.cos.ap-beijing.myqcloud.com/assets/202408251056909.png)
+
+![image-20240825105645527](https://mcdd-dev-1311841992.cos.ap-beijing.myqcloud.com/assets/202408251056685.png)
+
+![image-20240825105656631](https://mcdd-dev-1311841992.cos.ap-beijing.myqcloud.com/assets/202408251056303.png)
+
+# 四、用户注册、密码升级
+
+> [!NOTE] 
+>
+> 此处我们提及到的用户注册是指在 Spring Security  中通过 `UserDetailsManager` 提供的方法实现认证用户保存到 DB 中的操作
+
+## 4.1 用户注册
+
+1. 实现 `UserDetailsManager` 中 `createUser` 方法
+
+```java
+package jzxy.cbq.demo04.service.impl;
+
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import jzxy.cbq.demo04.entity.Account;
+import jzxy.cbq.demo04.auth.UserNameAlreadyExistException;
+import jzxy.cbq.demo04.mapper.AccountMapper;
+import jzxy.cbq.demo04.service.AccountService;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.provisioning.UserDetailsManager;
+import org.springframework.stereotype.Service;
+
+import java.util.Objects;
+
+/**
+ * AccountServiceImpl
+ *
+ * @version 1.0.0
+ * @author: mcdd
+ * @date: 2024/8/21 00:01
+ */
+@Service
+public class AccountServiceImpl extends ServiceImpl<AccountMapper, Account> implements AccountService, UserDetailsService, UserDetailsManager {
+
+    @Override
+    public UserDetails loadUserByUsername(String text) throws UsernameNotFoundException {
+        Account account = this.getOne(new LambdaQueryWrapper<Account>().eq(Account::getUsername, text).or().eq(Account::getEmail, text));
+        if (Objects.isNull(account)) {
+            throw new UsernameNotFoundException(text);
+        }
+        return User.builder()
+                .username(account.getUsername())
+                // 因为我们没有配置指定的密码加密器为了防止匹配不到相应的加密器此处手动指定为 noop
+                .password("{noop}" + account.getPassword())
+                .roles(account.getRole())
+                .build();
+    }
+
+    @Override
+    public void createUser(UserDetails user) {
+        if (this.userExists(user.getUsername())) {
+            throw new UserNameAlreadyExistException("用户名或邮箱已被注册");
+        }
+        Account account = new Account();
+        account.setUsername(user.getUsername());
+        account.setPassword(user.getPassword());
+        this.save(account);
+    }
+
+    @Override
+    public void updateUser(UserDetails user) {
+        if (!this.userExists(user.getUsername())) {
+            throw new UsernameNotFoundException("不存在指定用户名或邮箱的账户");
+        }
+    }
+
+    @Override
+    public void deleteUser(String text) {
+        if (!this.userExists(text)) {
+            throw new UsernameNotFoundException("不存在指定用户名或邮箱的账户");
+        }
+        this.remove(new LambdaQueryWrapper<Account>().eq(Account::getUsername, text).or().eq(Account::getEmail, text));
+    }
+
+    @Override
+    public void changePassword(String oldPassword, String newPassword) {
+
+    }
+
+    @Override
+    public boolean userExists(String text) {
+        Account account = this.getOne(new LambdaQueryWrapper<Account>().eq(Account::getUsername, text).or().eq(Account::getEmail, text));
+        return account != null;
+    }
+}
+
+```
+
+2. 创建相关 API
+
+```java
+```
+
+
+
+
+
+## 4.2 密码升级
+
+
+
+
+
+# 五、JSON 格式返回结果
+
+
 

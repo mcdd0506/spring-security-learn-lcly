@@ -3,10 +3,12 @@ package jzxy.cbq.demo04.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import jzxy.cbq.common.entity.BaseData;
+import jzxy.cbq.common.utils.Const;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
 import java.util.Date;
 
 /**
@@ -19,34 +21,40 @@ import java.util.Date;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Account implements BaseData {
+public class Account implements BaseData, Serializable {
     /**
      * id
      */
     @TableId(type = IdType.AUTO)
-    Integer id;
+    private Integer id;
     /**
      * 用户名
      */
-    String username;
+    private String username;
     /**
      * 密码
      */
-    String password;
+    private String password;
     /**
      * 邮箱
      */
-    String email;
+    private String email;
     /**
      * 角色
      */
-    String role;
+    private String role = Const.ROLE_NORMAL;
     /**
      * 头像 link
      */
-    String avatar;
+    private String avatar = Const.DEFAULT_AVATAR;
     /**
      * 注册时间
      */
-    Date registerTime;
+    private Date registerTime = new Date();
+
+    public Account(String username, String password, String email) {
+        this.username = username;
+        this.password = password;
+        this.email = email;
+    }
 }

@@ -73,4 +73,9 @@ public final class Const {
      * cors 跨越拦截器 order
      */
     public final static int ORDER_CORS = -102;
+    /**
+     * 默认内部错误消息
+     */
+    public final static String DEFAULT_INNER_ERROR_MSG = "内部错误，请联系管理员 mcdd1024@gmail.com ";
+
 }
