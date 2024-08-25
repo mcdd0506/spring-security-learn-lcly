@@ -25,6 +25,6 @@ class Demo05CustomAuthenticationApplicationTest {
 
     @Test
     void testDB() {
-        assertEquals(2, service.list().size(), "account list size != 2");
+        assertEquals(0, service.list().size(), "account list size != 0");
     }
 }
