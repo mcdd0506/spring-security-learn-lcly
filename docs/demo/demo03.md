@@ -388,7 +388,7 @@ public PasswordEncoder passwordEncoder() {
 >
 > 首先我们需要明确一个问题，在上面我们提到 Spring Security 提供了 InMemory 和 JDBC 两种基于 `UserDetailsService` 的实现，我们需要注意在基于 JDBC 的实现中， Spring Security  使用的 JDBC Template 进行数据库相关操作，因此其默认实现并不适用于 MyBatis、MyBatisPlus 等 ORM 框架
 >
-> ![image-20240825015747873](/home/mcdd/Pictures/typora/image-20240825015747873.png)
+> ![image-20240825015747873](https://mcdd-dev-1311841992.cos.ap-beijing.myqcloud.com/assets/202408252152735.png)
 
 那么我们如何使用自定义的 ORM 实现基于 DB 数据库进行认证呢？我们需要梳理 Spring Security  表单登录认证流程：
 
