@@ -16,8 +16,6 @@ class Demo05CustomAuthenticationApplicationTest {
     AccountService service;
     @Resource
     ApplicationContext context;
-    @Resource
-    BCryptPasswordEncoder encoder;
 
     @Test
     void contextLoads() {
@@ -31,8 +29,4 @@ class Demo05CustomAuthenticationApplicationTest {
         assertEquals(0, service.list().size(), "account list size != 0");
     }
 
-    @Test
-    void testPasswordEncoder() {
-        System.out.println(encoder.encode("123456"));
-    }
 }
