@@ -16,6 +16,7 @@
         <module>demo03-memory-authentication</module>
         <module>demo04-db-authentication</module>
         <module>demo05-custom-authentication</module>
+        <module>demo06-jwt</module>
     </modules>
     <packaging>pom</packaging>
 
