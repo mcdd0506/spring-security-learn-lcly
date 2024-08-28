@@ -5,6 +5,7 @@ import jzxy.cbq.demo05.service.AccountService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -15,6 +16,8 @@ class Demo05CustomAuthenticationApplicationTest {
     AccountService service;
     @Resource
     ApplicationContext context;
+    @Resource
+    BCryptPasswordEncoder encoder;
 
     @Test
     void contextLoads() {
@@ -26,5 +29,10 @@ class Demo05CustomAuthenticationApplicationTest {
     @Test
     void testDB() {
         assertEquals(0, service.list().size(), "account list size != 0");
+    }
+
+    @Test
+    void testPasswordEncoder() {
+        System.out.println(encoder.encode("123456"));
     }
 }

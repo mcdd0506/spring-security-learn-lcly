@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+</head>
+<body>
+<div id="app">
+    登陆用户: <input type="text" id="username" autocomplete="off" v-model="username">
+    <br/>
+    密码: <input type="password" id="password" v-model="password">
+    <br/>
+    <input type="button" value="登陆" @click="login">
+</div>
+
+</body>
+<script>
+    axios.defaults.baseURL = 'http://localhost:8084/api/auths/';
+    const appConfig = {
+        data() {
+            return {
+                username: '',
+                password: '',
+            };
+        },
+        methods: {
+            login() {
+                let url = "/login";
+                axios.post(url, {username: this.username, password: this.password})
+                    .then(res => {
+                        console.log(res.data);
+                    })
+                    .catch(err => {
+                        console.log(err.data);
+                    });
+            }
+        },
+    }
+    const app = Vue.createApp(appConfig);
+    app.mount('#app');
+</script>
+<style>
+    #app #username,
+    #app #password {
+        width: 150px;
+    }
+</style>
+</html>
