@@ -8,6 +8,7 @@ import jzxy.cbq.demo06.auth.UserNameAlreadyExistException;
 import jzxy.cbq.demo06.entity.Account;
 import jzxy.cbq.demo06.mapper.AccountMapper;
 import jzxy.cbq.demo06.service.AccountService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -23,6 +24,7 @@ import java.util.Objects;
  * @date: 2024/8/21 00:01
  */
 @Service
+@RequiredArgsConstructor
 public class AccountServiceImpl extends ServiceImpl<AccountMapper, Account> implements AccountService {
 
     @Override
