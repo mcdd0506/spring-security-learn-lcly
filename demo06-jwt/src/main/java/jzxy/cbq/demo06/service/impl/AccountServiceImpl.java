@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import jzxy.cbq.demo06.auth.RegisterVo;
 import jzxy.cbq.demo06.auth.UserNameAlreadyExistException;
 import jzxy.cbq.demo06.entity.Account;
+import jzxy.cbq.demo06.entity.AuthEntity;
 import jzxy.cbq.demo06.mapper.AccountMapper;
 import jzxy.cbq.demo06.service.AccountService;
 import lombok.RequiredArgsConstructor;
@@ -33,11 +34,7 @@ public class AccountServiceImpl extends ServiceImpl<AccountMapper, Account> impl
         if (Objects.isNull(account)) {
             throw new UsernameNotFoundException(text);
         }
-        return User.builder()
-                .username(account.getUsername())
-                .password(account.getPassword())
-                .roles(account.getRole())
-                .build();
+        return new AuthEntity(account);
     }
 
     @Override

@@ -4,7 +4,9 @@ package jzxy.cbq.demo06.auth;
 import jzxy.cbq.common.entity.RestBean;
 import jzxy.cbq.common.utils.Const;
 import jzxy.cbq.demo06.auth.UserNameAlreadyExistException;
+import jzxy.cbq.demo06.entity.LoginVo;
 import jzxy.cbq.demo06.service.AccountService;
+import jzxy.cbq.demo06.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -27,6 +29,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AccountService service;
+    private final AuthService authService;
+
+    @PostMapping("/login")
+    private RestBean<String> login(@RequestBody LoginVo vo){
+        return authService.login(vo);
+    }
 
     @PostMapping("/register")
     private RestBean<RegisterVo> register(@RequestBody RegisterVo registerVo) throws UserNameAlreadyExistException {

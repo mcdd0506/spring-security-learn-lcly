@@ -24,7 +24,7 @@ public class JWTUtils {
      * @param subject subject
      * @return token
      */
-    private static String generateToken(String subject) {
+    public static String generateToken(String subject) {
         return Jwts.builder()
                 // 头部
                 .setHeaderParam("typ", "JWT")
@@ -46,7 +46,7 @@ public class JWTUtils {
      * @param token token
      * @return Claims
      */
-    private static Claims verifyToken(String token) {
+    public static Claims verifyToken(String token) {
         return Jwts.parser()
                 .setSigningKey(SECRET)
                 .parseClaimsJws(token)
