@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 public class AuthServiceImpl implements AuthService {
 
     private final AuthenticationManager authenticationManager;
-    private final RedisTemplate<String,String> redisTemplate;
+    private final RedisTemplate<String,Object> redisTemplate;
 
     @Override
     public RestBean<String> login(LoginVo vo) {
@@ -46,7 +46,7 @@ public class AuthServiceImpl implements AuthService {
                 // 生成 token
                 String subject = "login:" + ((AuthEntity) authentication.getPrincipal()).getAccount().getId();
                 String token = JWTUtils.generateToken(subject);
-                redisTemplate.opsForValue().set(subject , token,30, TimeUnit.MINUTES);
+                redisTemplate.opsForValue().set(subject , authentication.getPrincipal(),30, TimeUnit.MINUTES);
                 return RestBean.success(token);
             }
         } catch (Exception e) {

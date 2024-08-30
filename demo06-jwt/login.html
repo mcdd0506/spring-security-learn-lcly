@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+</head>
+<body>
+<div id="app">
+    登陆用户: <input type="text" id="username" autocomplete="off" v-model="username">
+    <br/>
+    密码: <input type="password" id="password" v-model="password">
+    <br/>
+    <input type="button" value="登陆" @click="login">
+    <br/>
+    <input type="button" value="SayHello" @click="sayHello">
+    <input type="button" value="test01" @click="test01">
+    <input type="button" value="test02" @click="test02">
+</div>
+
+</body>
+<script>
+    const authItemName = "Authorization"
+
+    const accessHeader = () => {
+        return {
+            'Authorization': `${takeAccessToken()}`
+        }
+    }
+    function takeAccessToken() {
+        const str = localStorage.getItem(authItemName) || sessionStorage.getItem(authItemName);
+        if(!str) return null
+        return JSON.parse(str)
+    }
+    axios.defaults.baseURL = 'http://localhost:8085/api';
+    const appConfig = {
+        data() {
+            return {
+                username: '',
+                password: '',
+            };
+        },
+        methods: {
+            login() {
+                let url = "/auths/login";
+                axios.post(url, {username: this.username, password: this.password})
+                    .then(res => {
+                        let token = res.data.data
+                        localStorage.setItem("Authorization",JSON.stringify(token))
+                        console.log(res.data);
+                    })
+                    .catch(err => {
+                        console.log(err.data);
+                    });
+            },
+            sayHello(){
+                    let url = "hellos/sayHello";
+                    console.log(accessHeader())
+                    axios.get(url,{headers:accessHeader()}).then(res => {
+                        console.log(res.data.data);
+                    }).catch(err => {
+                        console.log(err.data);
+                    });
+            },
+            test01(){
+                let url = "tests/test01";
+                console.log(accessHeader())
+
+                axios.get(url,{headers:accessHeader(),
+                }).then(res => {
+                    console.log(res.data.data);
+                }).catch(err => {
+                    console.log(err.data);
+                });
+            },
+            test02(){
+                let url = "auths/sayHello";
+                console.log(accessHeader())
+
+                axios.get(url,{headers:accessHeader(),
+                }).then(res => {
+                    console.log(res.data.data);
+                }).catch(err => {
+                    console.log(err.data);
+                });
+            }
+        },
+    }
+    const app = Vue.createApp(appConfig);
+    app.mount('#app');
+</script>
+<style>
+    #app #username,
+    #app #password {
+        width: 150px;
+    }
+</style>
+</html>

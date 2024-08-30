@@ -5,6 +5,9 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jzxy.cbq.common.entity.RestBean;
+import jzxy.cbq.demo06.filter.CorsFilter;
+import jzxy.cbq.demo06.filter.TokenCheckFilter;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -20,6 +23,9 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
+import org.springframework.security.web.authentication.AuthenticationFilter;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -32,7 +38,10 @@ import java.io.PrintWriter;
  * @date: 2024/8/25 09:50
  */
 @Configuration
+@RequiredArgsConstructor
 public class SecurityConfiguration {
+
+    private final TokenCheckFilter tokenCheckFilter;
 
     @Bean
     public AuthenticationManager authenticationManager(UserDetailsService service) {
@@ -48,7 +57,9 @@ public class SecurityConfiguration {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(requests -> requests.
                         requestMatchers("/api/auths/**").permitAll()
+                        .requestMatchers("/api/tests/**").permitAll()
                         .anyRequest().authenticated())
+                .addFilterBefore(tokenCheckFilter, AuthorizationFilter.class)
                 .formLogin(form -> form.
                         successHandler(this::onAuthenticationSuccess)
                         .failureHandler(this::onAuthenticationFailure))

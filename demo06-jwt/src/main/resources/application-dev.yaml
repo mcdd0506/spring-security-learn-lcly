@@ -11,6 +11,11 @@ spring:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
       database: 0
+  web:
+    cors:
+      origin: '*'
+      credentials: false
+      methods: '*'
 mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
